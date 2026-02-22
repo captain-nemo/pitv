@@ -210,34 +210,59 @@
   ════════════════════════════════ */
   #app-crypto {
     background: linear-gradient(160deg, #0a0f1a 0%, #0a0a0f 100%);
-    gap: 24px;
-    padding-bottom: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0;
   }
-  .crypto-card {
-    background: var(--surface);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    padding: 24px 40px;
-    width: 680px;
+  #crypto-header {
     display: flex;
     align-items: center;
-    gap: 20px;
+    padding: 10px 16px 6px;
+    gap: 10px;
+    height: 52px;
+    flex-shrink: 0;
   }
-  .crypto-logo { font-size: 48px; }
-  .crypto-info { flex: 1; }
-  .crypto-name  { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
-  .crypto-price { font-size: 48px; font-weight: 200; color: var(--text); line-height: 1.1; }
-  .crypto-change {
-    font-size: 22px;
-    font-weight: 500;
-    padding: 4px 16px;
+  .coin-tab {
+    padding: 5px 16px;
     border-radius: 8px;
-    min-width: 100px;
-    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  .crypto-change.pos { color: var(--green); background: rgba(105,240,174,0.1); }
-  .crypto-change.neg { color: var(--red);   background: rgba(255,82,82,0.1); }
-  #crypto-updated { font-size: 12px; color: var(--muted); }
+  .coin-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  #crypto-price-info { flex: 1; text-align: right; }
+  #crypto-current-price { font-size: 26px; font-weight: 200; color: var(--text); }
+  #crypto-current-change { font-size: 15px; margin-left: 8px; }
+  #crypto-current-change.pos { color: var(--green); }
+  #crypto-current-change.neg { color: var(--red); }
+  #crypto-canvas-wrap { flex: 1; overflow: hidden; min-height: 0; }
+  #crypto-canvas { display: block; }
+  #crypto-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px 10px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+  .ctrl-group { display: flex; gap: 5px; align-items: center; }
+  .ctrl-label { font-size: 11px; color: var(--muted); margin-right: 2px; letter-spacing: 1px; text-transform: uppercase; }
+  .ctrl-btn {
+    padding: 4px 11px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+  }
+  .ctrl-btn.active { background: rgba(79,195,247,0.15); color: var(--accent); border-color: var(--accent); }
+  #crypto-updated-small { font-size: 11px; color: var(--muted); }
 
   /* ════════════════════════════════
      APP: PHOTO
@@ -298,23 +323,31 @@
 
   <!-- CRYPTO -->
   <div id="app-crypto" class="app">
-    <div class="crypto-card" id="btc-card">
-      <div class="crypto-logo">₿</div>
-      <div class="crypto-info">
-        <div class="crypto-name">Bitcoin</div>
-        <div class="crypto-price" id="btc-price">$--</div>
+    <div id="crypto-header">
+      <div class="coin-tab active" data-coin="BTC" onclick="selectCoin('BTC')">₿ BTC</div>
+      <div class="coin-tab" data-coin="ETH" onclick="selectCoin('ETH')">Ξ ETH</div>
+      <div id="crypto-price-info">
+        <span id="crypto-current-price">$--</span>
+        <span id="crypto-current-change" class="pos">--%</span>
       </div>
-      <div class="crypto-change" id="btc-change">--%</div>
     </div>
-    <div class="crypto-card" id="eth-card">
-      <div class="crypto-logo">Ξ</div>
-      <div class="crypto-info">
-        <div class="crypto-name">Ethereum</div>
-        <div class="crypto-price" id="eth-price">$--</div>
+    <div id="crypto-canvas-wrap">
+      <canvas id="crypto-canvas"></canvas>
+    </div>
+    <div id="crypto-controls">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Bars</span>
+        <div class="ctrl-btn active" data-bars="30" onclick="selectBars(30)">30</div>
+        <div class="ctrl-btn" data-bars="50" onclick="selectBars(50)">50</div>
+        <div class="ctrl-btn" data-bars="80" onclick="selectBars(80)">80</div>
       </div>
-      <div class="crypto-change" id="eth-change">--%</div>
+      <div class="ctrl-group">
+        <div class="ctrl-btn active" data-interval="1h" onclick="selectInterval('1h')">1H</div>
+        <div class="ctrl-btn" data-interval="4h" onclick="selectInterval('4h')">4H</div>
+        <div class="ctrl-btn" data-interval="1d" onclick="selectInterval('1d')">1D</div>
+      </div>
+      <div id="crypto-updated-small">--:--</div>
     </div>
-    <div id="crypto-updated">Laden...</div>
   </div>
 
   <!-- PHOTO -->
@@ -517,39 +550,139 @@ async function fetchWeather() {
   }
 }
 
-// ── Crypto ────────────────────────────────────────────────────────────────────
+// ── Crypto Candlestick ────────────────────────────────────────────────────────
+let cryptoCoin     = 'BTC';
+let cryptoInterval = '1h';
+let cryptoBars     = 30;
+const BINANCE_SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT' };
+
 function fmtPrice(p) {
   if (p >= 1000) return '$' + p.toLocaleString('nl-NL', {maximumFractionDigits: 0});
   return '$' + p.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
+function fmtPriceShort(p) {
+  if (p >= 1000) return '$' + (p / 1000).toFixed(1) + 'k';
+  return '$' + p.toFixed(0);
+}
+
+function selectCoin(coin) {
+  cryptoCoin = coin;
+  document.querySelectorAll('.coin-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.coin === coin));
+  fetchCrypto();
+}
+function selectInterval(iv) {
+  cryptoInterval = iv;
+  document.querySelectorAll('[data-interval]').forEach(b =>
+    b.classList.toggle('active', b.dataset.interval === iv));
+  fetchCrypto();
+}
+function selectBars(n) {
+  cryptoBars = n;
+  document.querySelectorAll('[data-bars]').forEach(b =>
+    b.classList.toggle('active', b.dataset.bars == n));
+  fetchCrypto();
+}
 
 async function fetchCrypto() {
+  const symbol = BINANCE_SYMBOLS[cryptoCoin];
+  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${cryptoInterval}&limit=${cryptoBars}`;
   try {
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true';
     const r = await fetch(url);
-    const d = await r.json();
+    const data = await r.json();
+    // [openTime, open, high, low, close, volume, ...]
+    const candles = data.map(k => ({
+      t: k[0], o: parseFloat(k[1]), h: parseFloat(k[2]),
+      l: parseFloat(k[3]), c: parseFloat(k[4])
+    }));
 
-    const btcChange = d.bitcoin.usd_24h_change;
-    const ethChange = d.ethereum.usd_24h_change;
-
-    document.getElementById('btc-price').textContent = fmtPrice(d.bitcoin.usd);
-    document.getElementById('eth-price').textContent = fmtPrice(d.ethereum.usd);
-
-    const btcEl = document.getElementById('btc-change');
-    btcEl.textContent = (btcChange >= 0 ? '+' : '') + btcChange.toFixed(2) + '%';
-    btcEl.className = 'crypto-change ' + (btcChange >= 0 ? 'pos' : 'neg');
-
-    const ethEl = document.getElementById('eth-change');
-    ethEl.textContent = (ethChange >= 0 ? '+' : '') + ethChange.toFixed(2) + '%';
-    ethEl.className = 'crypto-change ' + (ethChange >= 0 ? 'pos' : 'neg');
+    // Price header: last close + change over shown period
+    const last  = candles[candles.length - 1];
+    const first = candles[0];
+    const change = ((last.c - first.o) / first.o) * 100;
+    document.getElementById('crypto-current-price').textContent = fmtPrice(last.c);
+    const chEl = document.getElementById('crypto-current-change');
+    chEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+    chEl.className = change >= 0 ? 'pos' : 'neg';
 
     const now = new Date();
-    document.getElementById('crypto-updated').textContent =
-      `Bijgewerkt: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('crypto-updated-small').textContent =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    drawCandlesticks(candles);
   } catch (err) {
-    document.getElementById('crypto-updated').textContent = 'Ophalen mislukt';
+    document.getElementById('crypto-updated-small').textContent = 'Fout';
     console.error('Crypto error:', err);
   }
+}
+
+function drawCandlesticks(candles) {
+  const canvas = document.getElementById('crypto-canvas');
+  const wrap   = document.getElementById('crypto-canvas-wrap');
+  const W = wrap.clientWidth  || 800;
+  const H = wrap.clientHeight || 340;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  if (!candles || !candles.length) return;
+
+  const PAD_L = 8, PAD_R = 58, PAD_T = 14, PAD_B = 24;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+
+  const minP  = Math.min(...candles.map(c => c.l));
+  const maxP  = Math.max(...candles.map(c => c.h));
+  const range = maxP - minP || 1;
+  const toY   = p => PAD_T + chartH - ((p - minP) / range) * chartH;
+
+  const n      = candles.length;
+  const step   = chartW / n;
+  const bodyW  = Math.max(2, Math.floor(step * 0.65));
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.font = '10px system-ui';
+  ctx.fillStyle = 'rgba(84,110,122,0.9)';
+  ctx.textAlign = 'left';
+  for (let i = 0; i <= 4; i++) {
+    const y     = PAD_T + (chartH / 4) * i;
+    const price = maxP - (range / 4) * i;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R + 6, y); ctx.stroke();
+    ctx.fillText(fmtPriceShort(price), W - PAD_R + 8, y + 4);
+  }
+
+  // Candles
+  candles.forEach((c, i) => {
+    const cx     = PAD_L + step * i + step / 2;
+    const isUp   = c.c >= c.o;
+    const color  = isUp ? '#69f0ae' : '#ff5252';
+    const top    = toY(Math.max(c.o, c.c));
+    const bottom = toY(Math.min(c.o, c.c));
+    const bodyH  = Math.max(1, bottom - top);
+
+    ctx.fillStyle   = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 1;
+
+    // Wick
+    ctx.beginPath();
+    ctx.moveTo(cx, toY(c.h));
+    ctx.lineTo(cx, toY(c.l));
+    ctx.stroke();
+
+    // Body
+    ctx.fillRect(cx - bodyW / 2, top, bodyW, bodyH);
+  });
+
+  // Last price dashed line
+  const lastY = toY(candles[candles.length - 1].c);
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(79,195,247,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD_L, lastY); ctx.lineTo(W - PAD_R + 6, lastY); ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
