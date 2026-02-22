@@ -488,9 +488,9 @@ async function fetchCrypto() {
 
 function drawCandlesticks(candles) {
   const canvas = document.getElementById('crypto-canvas');
-  const wrap   = document.getElementById('crypto-canvas-wrap');
-  const W = wrap.clientWidth  || 480;
-  const H = wrap.clientHeight || 220;
+  // Use fixed dimensions — clientWidth/Height returns 0 when app is hidden
+  const W = 480;
+  const H = 320 - 38 - 34; // screen height minus header and controls
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
