@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800, initial-scale=1.0">
+<title>PiTV</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --accent: #4fc3f7;
+    --accent2: #81d4fa;
+    --text: #e8eaf6;
+    --muted: #546e7a;
+    --green: #69f0ae;
+    --red: #ff5252;
+    --gold: #ffd54f;
+  }
+
+  html, body {
+    width: 800px; height: 480px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    user-select: none;
+    cursor: none;
+  }
+
+  /* ── Layout ── */
+  #container {
+    position: relative;
+    width: 800px; height: 480px;
+    overflow: hidden;
+  }
+
+  .app {
+    position: absolute;
+    width: 800px; height: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+  .app.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+  .app.exit-left  { opacity: 0; transform: translateX(-100%); }
+  .app.exit-right { opacity: 0; transform: translateX(100%); }
+
+  /* ── Touch zones ── */
+  .touch-zone {
+    position: fixed;
+    top: 0; height: 100%;
+    width: 80px;
+    z-index: 100;
+  }
+  #touch-left  { left: 0; }
+  #touch-right { right: 0; }
+
+  /* ── Dot nav ── */
+  #dots {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 99;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+
+  /* ── Status bar ── */
+  #statusbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+    font-size: 11px;
+    color: var(--muted);
+    z-index: 98;
+  }
+  #ws-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-left: 6px;
+    transition: background 0.3s;
+  }
+  #ws-dot.on { background: var(--green); }
+
+  /* ════════════════════════════════
+     APP: CLOCK
+  ════════════════════════════════ */
+  #app-clock {
+    background: radial-gradient(ellipse at center, #0d1117 0%, var(--bg) 80%);
+  }
+  #clock-time {
+    font-size: 140px;
+    font-weight: 200;
+    letter-spacing: -4px;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(79,195,247,0.3);
+  }
+  #clock-date {
+    font-size: 22px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #clock-day {
+    font-size: 16px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* ════════════════════════════════
+     APP: WEATHER
+  ════════════════════════════════ */
+  #app-weather {
+    background: linear-gradient(160deg, #0d1b2a 0%, #0a0a0f 100%);
+    padding: 20px;
+    justify-content: flex-start;
+  }
+  #weather-current {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    width: 100%;
+    padding: 0 40px;
+  }
+  #weather-icon { font-size: 80px; line-height: 1; }
+  #weather-main { flex: 1; }
+  #weather-temp {
+    font-size: 72px;
+    font-weight: 200;
+    color: var(--text);
+    line-height: 1;
+  }
+  #weather-desc {
+    font-size: 20px;
+    color: var(--muted);
+    margin-top: 4px;
+    text-transform: capitalize;
+  }
+  #weather-meta {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 8px;
+    display: flex;
+    gap: 16px;
+  }
+  #weather-meta span { display: flex; align-items: center; gap: 4px; }
+  #weather-forecast {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 0 20px;
+    width: 100%;
+  }
+  .forecast-day {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .forecast-day .f-name  { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .forecast-day .f-icon  { font-size: 32px; margin: 6px 0; }
+  .forecast-day .f-temps { font-size: 14px; }
+  .forecast-day .f-hi    { color: var(--text); }
+  .forecast-day .f-lo    { color: var(--muted); margin-left: 6px; }
+  #weather-location {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ════════════════════════════════
+     APP: CRYPTO
+  ════════════════════════════════ */
+  #app-crypto {
+    background: linear-gradient(160deg, #0a0f1a 0%, #0a0a0f 100%);
+    gap: 24px;
+    padding-bottom: 30px;
+  }
+  .crypto-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 24px 40px;
+    width: 680px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .crypto-logo { font-size: 48px; }
+  .crypto-info { flex: 1; }
+  .crypto-name  { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+  .crypto-price { font-size: 48px; font-weight: 200; color: var(--text); line-height: 1.1; }
+  .crypto-change {
+    font-size: 22px;
+    font-weight: 500;
+    padding: 4px 16px;
+    border-radius: 8px;
+    min-width: 100px;
+    text-align: center;
+  }
+  .crypto-change.pos { color: var(--green); background: rgba(105,240,174,0.1); }
+  .crypto-change.neg { color: var(--red);   background: rgba(255,82,82,0.1); }
+  #crypto-updated { font-size: 12px; color: var(--muted); }
+
+  /* ════════════════════════════════
+     APP: PHOTO
+  ════════════════════════════════ */
+  #app-photo {
+    background: #000;
+    justify-content: center;
+  }
+  #photo-img {
+    max-width: 800px;
+    max-height: 480px;
+    object-fit: contain;
+    display: none;
+  }
+  #photo-placeholder {
+    color: var(--muted);
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div id="statusbar">
+  <span id="ws-label">ws</span>
+  <div id="ws-dot"></div>
+</div>
+
+<div id="touch-left"  class="touch-zone"></div>
+<div id="touch-right" class="touch-zone"></div>
+
+<div id="container">
+
+  <!-- CLOCK -->
+  <div id="app-clock" class="app active">
+    <div id="clock-time">00:00</div>
+    <div id="clock-date">zondag 1 januari</div>
+    <div id="clock-day">week 1</div>
+  </div>
+
+  <!-- WEATHER -->
+  <div id="app-weather" class="app">
+    <div id="weather-current">
+      <div id="weather-icon">⛅</div>
+      <div id="weather-main">
+        <div id="weather-temp">--°</div>
+        <div id="weather-desc">Laden...</div>
+        <div id="weather-meta">
+          <span>💧 <span id="w-humidity">--</span>%</span>
+          <span>💨 <span id="w-wind">--</span> km/h</span>
+          <span>👁 <span id="w-vis">--</span> km</span>
+        </div>
+      </div>
+    </div>
+    <div id="weather-forecast"></div>
+    <div id="weather-location">Venlo, NL</div>
+  </div>
+
+  <!-- CRYPTO -->
+  <div id="app-crypto" class="app">
+    <div class="crypto-card" id="btc-card">
+      <div class="crypto-logo">₿</div>
+      <div class="crypto-info">
+        <div class="crypto-name">Bitcoin</div>
+        <div class="crypto-price" id="btc-price">$--</div>
+      </div>
+      <div class="crypto-change" id="btc-change">--%</div>
+    </div>
+    <div class="crypto-card" id="eth-card">
+      <div class="crypto-logo">Ξ</div>
+      <div class="crypto-info">
+        <div class="crypto-name">Ethereum</div>
+        <div class="crypto-price" id="eth-price">$--</div>
+      </div>
+      <div class="crypto-change" id="eth-change">--%</div>
+    </div>
+    <div id="crypto-updated">Laden...</div>
+  </div>
+
+  <!-- PHOTO -->
+  <div id="app-photo" class="app">
+    <img id="photo-img" src="" alt="">
+    <div id="photo-placeholder">Wachten op afbeelding...</div>
+  </div>
+
+</div>
+
+<div id="dots">
+  <div class="dot active" data-app="clock"></div>
+  <div class="dot" data-app="weather"></div>
+  <div class="dot" data-app="crypto"></div>
+  <div class="dot" data-app="photo"></div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const APPS = ['clock', 'weather', 'crypto', 'photo'];
+const AUTO_ROTATE_MS = 30000;
+const REFRESH_MS = 5 * 60 * 1000;
+const WS_URL = `ws://${location.host}/ws`;
+const WEATHER_LAT = 51.37, WEATHER_LON = 6.17;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let currentIdx = 0;
+let rotateTimer = null;
+let ws = null;
+let photoActive = false;
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function showApp(name, direction = 'right') {
+  const idx = APPS.indexOf(name);
+  if (idx === -1) return;
+  const prev = APPS[currentIdx];
+  if (prev === name) return;
+
+  const prevEl = document.getElementById(`app-${prev}`);
+  const nextEl = document.getElementById(`app-${name}`);
+
+  prevEl.classList.remove('active');
+  prevEl.classList.add(direction === 'right' ? 'exit-left' : 'exit-right');
+  setTimeout(() => prevEl.classList.remove('exit-left', 'exit-right'), 450);
+
+  nextEl.style.transform = direction === 'right' ? 'translateX(100%)' : 'translateX(-100%)';
+  nextEl.classList.add('active');
+
+  currentIdx = idx;
+  photoActive = name === 'photo' && document.getElementById('photo-img').style.display !== 'none';
+  updateDots();
+  resetRotateTimer();
+}
+
+function nextApp() {
+  const next = APPS[(currentIdx + 1) % APPS.length];
+  showApp(next, 'right');
+}
+function prevApp() {
+  const prev = APPS[(currentIdx - 1 + APPS.length) % APPS.length];
+  showApp(prev, 'left');
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentIdx);
+  });
+}
+
+// ── Auto-rotate ──────────────────────────────────────────────────────────────
+function resetRotateTimer() {
+  clearTimeout(rotateTimer);
+  if (photoActive) return; // Pause auto-rotate when photo is showing
+  rotateTimer = setTimeout(nextApp, AUTO_ROTATE_MS);
+}
+
+// ── Touch zones ──────────────────────────────────────────────────────────────
+document.getElementById('touch-left').addEventListener('click', prevApp);
+document.getElementById('touch-right').addEventListener('click', nextApp);
+
+// Swipe support
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) dx < 0 ? nextApp() : prevApp();
+});
+
+// ── WebSocket ────────────────────────────────────────────────────────────────
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    document.getElementById('ws-dot').classList.add('on');
+  };
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'show_image') {
+      const img = document.getElementById('photo-img');
+      const placeholder = document.getElementById('photo-placeholder');
+      img.src = msg.data;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      photoActive = true;
+      showApp('photo', 'right');
+    } else if (msg.type === 'switch_app') {
+      showApp(msg.app, 'right');
+    }
+  };
+
+  ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('on');
+    setTimeout(connectWS, 3000); // Auto-reconnect
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+const DAYS = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock-time').textContent = `${hh}:${mm}`;
+  document.getElementById('clock-date').textContent =
+    `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
+  document.getElementById('clock-day').textContent = `week ${getWeekNumber(now)}`;
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Weather ───────────────────────────────────────────────────────────────────
+const WMO_ICONS = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'🌨️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️',
+};
+const WMO_DESC = {
+  0:'Helder', 1:'Overwegend helder', 2:'Gedeeltelijk bewolkt', 3:'Bewolkt',
+  45:'Mist', 48:'Rijp mist',
+  51:'Lichte motregen', 53:'Motregen', 55:'Dichte motregen',
+  61:'Lichte regen', 63:'Regen', 65:'Zware regen',
+  71:'Lichte sneeuw', 73:'Sneeuw', 75:'Zware sneeuw',
+  80:'Lichte buien', 81:'Buien', 82:'Zware buien',
+  95:'Onweer', 96:'Onweer met hagel', 99:'Zwaar onweer',
+};
+
+async function fetchWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER_LAT}&longitude=${WEATHER_LON}` +
+      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,visibility,weather_code` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min&wind_speed_unit=kmh&timezone=Europe%2FAmsterdam&forecast_days=4`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const c = d.current;
+
+    document.getElementById('weather-icon').textContent = WMO_ICONS[c.weather_code] || '🌡️';
+    document.getElementById('weather-temp').textContent = `${Math.round(c.temperature_2m)}°`;
+    document.getElementById('weather-desc').textContent = WMO_DESC[c.weather_code] || '';
+    document.getElementById('w-humidity').textContent = c.relative_humidity_2m;
+    document.getElementById('w-wind').textContent = Math.round(c.wind_speed_10m);
+    document.getElementById('w-vis').textContent = Math.round((c.visibility || 0) / 1000);
+
+    // Forecast (skip today = index 0, show next 3 days)
+    const dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+    const fc = document.getElementById('weather-forecast');
+    fc.innerHTML = '';
+    for (let i = 1; i <= 3; i++) {
+      const date = new Date(d.daily.time[i]);
+      const div = document.createElement('div');
+      div.className = 'forecast-day';
+      div.innerHTML = `
+        <div class="f-name">${dayNames[date.getDay()]}</div>
+        <div class="f-icon">${WMO_ICONS[d.daily.weather_code[i]] || '🌡️'}</div>
+        <div class="f-temps">
+          <span class="f-hi">${Math.round(d.daily.temperature_2m_max[i])}°</span>
+          <span class="f-lo">${Math.round(d.daily.temperature_2m_min[i])}°</span>
+        </div>`;
+      fc.appendChild(div);
+    }
+  } catch (err) {
+    document.getElementById('weather-desc').textContent = 'Ophalen mislukt';
+    console.error('Weather error:', err);
+  }
+}
+
+// ── Crypto ────────────────────────────────────────────────────────────────────
+function fmtPrice(p) {
+  if (p >= 1000) return '$' + p.toLocaleString('nl-NL', {maximumFractionDigits: 0});
+  return '$' + p.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+async function fetchCrypto() {
+  try {
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true';
+    const r = await fetch(url);
+    const d = await r.json();
+
+    const btcChange = d.bitcoin.usd_24h_change;
+    const ethChange = d.ethereum.usd_24h_change;
+
+    document.getElementById('btc-price').textContent = fmtPrice(d.bitcoin.usd);
+    document.getElementById('eth-price').textContent = fmtPrice(d.ethereum.usd);
+
+    const btcEl = document.getElementById('btc-change');
+    btcEl.textContent = (btcChange >= 0 ? '+' : '') + btcChange.toFixed(2) + '%';
+    btcEl.className = 'crypto-change ' + (btcChange >= 0 ? 'pos' : 'neg');
+
+    const ethEl = document.getElementById('eth-change');
+    ethEl.textContent = (ethChange >= 0 ? '+' : '') + ethChange.toFixed(2) + '%';
+    ethEl.className = 'crypto-change ' + (ethChange >= 0 ? 'pos' : 'neg');
+
+    const now = new Date();
+    document.getElementById('crypto-updated').textContent =
+      `Bijgewerkt: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  } catch (err) {
+    document.getElementById('crypto-updated').textContent = 'Ophalen mislukt';
+    console.error('Crypto error:', err);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+connectWS();
+fetchWeather();
+fetchCrypto();
+setInterval(fetchWeather, REFRESH_MS);
+setInterval(fetchCrypto, REFRESH_MS);
+resetRotateTimer();
+</script>
+</body>
+</html>
