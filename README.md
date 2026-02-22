@@ -22,7 +22,7 @@ Navigeren: tik op linker/rechter rand of swipe. Auto-rotate elke 30 seconden (pa
 ### 1. Clone de repo
 ```bash
 cd ~
-git clone https://github.com/jvdmunckhof/pitv.git
+git clone https://github.com/captain-nemo/pitv.git
 cd pitv
 ```
 
