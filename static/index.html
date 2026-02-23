@@ -166,10 +166,12 @@ function showPhoto(src) {
   photoTimer = setTimeout(showCrypto, PHOTO_RETURN);
 }
 
-// Touch anywhere on photo → terug naar crypto
-document.getElementById('app-photo').addEventListener('touchstart', e => {
-  e.preventDefault();
-  showCrypto();
+// Touch anywhere → als photo actief is, terug naar crypto
+document.addEventListener('touchstart', e => {
+  if (document.getElementById('app-photo').classList.contains('active')) {
+    e.preventDefault();
+    showCrypto();
+  }
 }, { passive: false });
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
