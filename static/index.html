@@ -298,8 +298,20 @@ function showApp(name, direction = 'right') {
   prevEl.classList.add(direction === 'right' ? 'exit-left' : 'exit-right');
   setTimeout(() => prevEl.classList.remove('exit-left', 'exit-right'), 400);
 
+  // Fix: use inline styles for animation so CSS class doesn't override transform
+  nextEl.style.transition = 'none';
   nextEl.style.transform = direction === 'right' ? 'translateX(100%)' : 'translateX(-100%)';
+  nextEl.style.opacity = '0';
+  void nextEl.offsetWidth; // force reflow — browser registers start position
+  nextEl.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+  nextEl.style.transform = 'translateX(0)';
+  nextEl.style.opacity = '1';
   nextEl.classList.add('active');
+  setTimeout(() => {
+    nextEl.style.transition = '';
+    nextEl.style.transform = '';
+    nextEl.style.opacity = '';
+  }, 400);
 
   currentIdx  = idx;
   photoActive = name === 'photo' && document.getElementById('photo-img').style.display !== 'none';
