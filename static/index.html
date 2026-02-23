@@ -2,146 +2,42 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-  <meta name="google" content="notranslate">
-  <meta http-equiv="Content-Language" content="nl">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PiTV</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --accent: #4fc3f7;
-    --text: #e8eaf6;
-    --muted: #546e7a;
-    --green: #69f0ae;
-    --red: #ff5252;
+    --bg: #0a0a0f; --surface: #12121a; --accent: #4fc3f7;
+    --text: #e8eaf6; --muted: #546e7a; --green: #69f0ae; --red: #ff5252;
   }
-
   html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
+    width: 100%; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
-    touch-action: none;
-    user-select: none;
-    user-select: none;
-    cursor: none;
+    touch-action: none; user-select: none;
   }
 
-  /* ── Layout ── */
-  #container {
-    position: relative;
-    width: 100%; height: 100%;
-    overflow: hidden;
-  }
-
-  .app {
-    position: absolute;
-    width: 100%; height: 100%;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .app.active { display: flex; }
-
-  /* ── Touch zones ── */
-  .touch-zone {
-    position: fixed; top: 0; height: 100%;
-    width: 50px; z-index: 100;
-  }
-  #touch-left  { left: 0; }
-  #touch-right { right: 0; }
-
-  /* ── Dot nav ── */
-  #dots {
-    position: fixed; bottom: 6px;
-    left: 50%; transform: translateX(-50%);
-    display: flex; gap: 6px; z-index: 99;
-  }
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s, transform 0.3s;
-  }
-  .dot.active { background: var(--accent); transform: scale(1.4); }
-
-  /* ── Status bar ── */
-  #statusbar {
-    position: fixed; top: 0; left: 0; right: 0;
-    height: 18px; display: flex; align-items: center;
-    justify-content: flex-end; padding: 0 8px;
-    font-size: 10px; color: var(--muted); z-index: 98;
-  }
+  /* ── Status dot ── */
   #ws-dot {
+    position: fixed; top: 6px; right: 8px; z-index: 100;
     width: 5px; height: 5px; border-radius: 50%;
-    background: var(--red); margin-left: 5px;
-    transition: background 0.3s;
+    background: var(--muted); transition: background 0.3s;
   }
   #ws-dot.on { background: var(--green); }
 
-  /* ════════════════
-     CLOCK
-  ════════════════ */
-  #app-clock {
-    background: radial-gradient(ellipse at center, #0d1117 0%, var(--bg) 80%);
+  /* ── Apps ── */
+  .app {
+    position: absolute; width: 100%; height: 100%;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
   }
-  #clock-time {
-    font-size: 90px; font-weight: 200; letter-spacing: -3px;
-    color: var(--accent); line-height: 1;
-    text-shadow: 0 0 30px rgba(79,195,247,0.3);
-  }
-  #clock-date {
-    font-size: 14px; color: var(--muted); margin-top: 6px;
-    letter-spacing: 1px; text-transform: uppercase;
-  }
-  #clock-day {
-    font-size: 11px; color: var(--muted); margin-top: 3px;
-    letter-spacing: 2px; text-transform: uppercase; opacity: 0.6;
-  }
+  .app.active { display: flex; }
 
-  /* ════════════════
-     WEATHER
-  ════════════════ */
-  #app-weather {
-    background: linear-gradient(160deg, #0d1b2a 0%, #0a0a0f 100%);
-    padding: 14px; justify-content: flex-start;
-  }
-  #weather-current {
-    display: flex; align-items: center; gap: 12px;
-    margin-top: 18px; width: 100%; padding: 0 10px;
-  }
-  #weather-icon { font-size: 50px; line-height: 1; }
-  #weather-main { flex: 1; }
-  #weather-temp { font-size: 44px; font-weight: 200; color: var(--text); line-height: 1; }
-  #weather-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
-  #weather-meta { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; gap: 10px; }
-  #weather-forecast {
-    display: flex; gap: 6px; margin-top: 14px;
-    padding: 0 10px; width: 100%;
-  }
-  .forecast-day {
-    flex: 1; background: var(--surface); border-radius: 8px;
-    padding: 7px 4px; text-align: center;
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-  .forecast-day .f-name  { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .forecast-day .f-icon  { font-size: 20px; margin: 3px 0; }
-  .forecast-day .f-temps { font-size: 11px; }
-  .forecast-day .f-hi    { color: var(--text); }
-  .forecast-day .f-lo    { color: var(--muted); margin-left: 4px; }
-  #weather-location { font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; }
-
-  /* ════════════════
-     CRYPTO
-  ════════════════ */
+  /* ── CRYPTO ── */
   #app-crypto {
     background: linear-gradient(160deg, #0a0f1a 0%, #0a0a0f 100%);
-    flex-direction: column; justify-content: flex-start;
-    align-items: stretch; padding: 0;
+    justify-content: flex-start; align-items: stretch; padding: 0;
   }
   #crypto-header {
     display: flex; align-items: center;
@@ -151,8 +47,7 @@
   .coin-tab {
     padding: 3px 10px; border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.1);
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    cursor: pointer; transition: all 0.2s;
+    font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer;
   }
   .coin-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
   #crypto-price-info { flex: 1; text-align: right; }
@@ -171,168 +66,110 @@
   .ctrl-btn {
     padding: 3px 8px; border-radius: 5px;
     border: 1px solid rgba(255,255,255,0.1);
-    font-size: 11px; color: var(--muted); cursor: pointer;
-    transition: all 0.2s; background: transparent;
+    font-size: 11px; color: var(--muted); cursor: pointer; background: transparent;
   }
   .ctrl-btn.active { background: rgba(79,195,247,0.15); color: var(--accent); border-color: var(--accent); }
   #crypto-updated-small { font-size: 10px; color: var(--muted); }
 
-  /* ════════════════
-     PHOTO
-  ════════════════ */
-  #app-photo { background: #000; justify-content: center; }
-  #photo-img { max-width: 100%; max-height: 100%; object-fit: contain; display: none; }
-  #photo-placeholder { color: var(--muted); font-size: 13px; letter-spacing: 2px; }
+  /* ── PHOTO ── */
+  #app-photo { background: #000; cursor: pointer; }
+  #photo-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #photo-return {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px;
+  }
+  #photo-timer {
+    position: absolute; top: 8px; right: 16px;
+    font-size: 10px; color: rgba(255,255,255,0.25);
+  }
 </style>
 </head>
 <body>
 
-<div id="statusbar">
-  <span id="ws-label">ws</span>
-  <div id="ws-dot"></div>
+<div id="ws-dot"></div>
+
+<!-- CRYPTO (default) -->
+<div id="app-crypto" class="app active">
+  <div id="crypto-header">
+    <div class="coin-tab active" data-coin="BTC" onclick="selectCoin('BTC')">₿ BTC</div>
+    <div class="coin-tab" data-coin="ETH" onclick="selectCoin('ETH')">Ξ ETH</div>
+    <div id="crypto-price-info">
+      <span id="crypto-current-price">$--</span>
+      <span id="crypto-current-change" class="pos">--%</span>
+    </div>
+  </div>
+  <div id="crypto-canvas-wrap">
+    <canvas id="crypto-canvas"></canvas>
+  </div>
+  <div id="crypto-controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Bars</span>
+      <div class="ctrl-btn active" data-bars="30" onclick="selectBars(30)">30</div>
+      <div class="ctrl-btn" data-bars="50" onclick="selectBars(50)">50</div>
+      <div class="ctrl-btn" data-bars="80" onclick="selectBars(80)">80</div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-btn" data-interval="1h" onclick="selectInterval('1h')">1H</div>
+      <div class="ctrl-btn active" data-interval="4h" onclick="selectInterval('4h')">4H</div>
+      <div class="ctrl-btn" data-interval="1d" onclick="selectInterval('1d')">1D</div>
+    </div>
+    <div id="crypto-updated-small">--:--</div>
+  </div>
 </div>
 
-<div id="touch-left"  class="touch-zone"></div>
-<div id="touch-right" class="touch-zone"></div>
-
-<div id="container">
-
-  <!-- CLOCK -->
-  <div id="app-clock" class="app active">
-    <div id="clock-time">00:00</div>
-    <div id="clock-date">zondag 1 januari</div>
-    <div id="clock-day">week 1</div>
-  </div>
-
-  <!-- WEATHER -->
-  <div id="app-weather" class="app">
-    <div id="weather-current">
-      <div id="weather-icon">⛅</div>
-      <div id="weather-main">
-        <div id="weather-temp">--°</div>
-        <div id="weather-desc">Laden...</div>
-        <div id="weather-meta">
-          <span>💧<span id="w-humidity">--</span>%</span>
-          <span>💨<span id="w-wind">--</span>km/h</span>
-          <span>👁<span id="w-vis">--</span>km</span>
-        </div>
-      </div>
-    </div>
-    <div id="weather-forecast"></div>
-    <div id="weather-location">Venlo, NL</div>
-  </div>
-
-  <!-- CRYPTO -->
-  <div id="app-crypto" class="app">
-    <div id="crypto-header">
-      <div class="coin-tab active" data-coin="BTC" onclick="selectCoin('BTC')">₿ BTC</div>
-      <div class="coin-tab" data-coin="ETH" onclick="selectCoin('ETH')">Ξ ETH</div>
-      <div id="crypto-price-info">
-        <span id="crypto-current-price">$--</span>
-        <span id="crypto-current-change" class="pos">--%</span>
-      </div>
-    </div>
-    <div id="crypto-canvas-wrap">
-      <canvas id="crypto-canvas"></canvas>
-    </div>
-    <div id="crypto-controls">
-      <div class="ctrl-group">
-        <span class="ctrl-label">Bars</span>
-        <div class="ctrl-btn active" data-bars="30" onclick="selectBars(30)">30</div>
-        <div class="ctrl-btn" data-bars="50" onclick="selectBars(50)">50</div>
-        <div class="ctrl-btn" data-bars="80" onclick="selectBars(80)">80</div>
-      </div>
-      <div class="ctrl-group">
-        <div class="ctrl-btn" data-interval="1h" onclick="selectInterval('1h')">1H</div>
-        <div class="ctrl-btn active" data-interval="4h" onclick="selectInterval('4h')">4H</div>
-        <div class="ctrl-btn" data-interval="1d" onclick="selectInterval('1d')">1D</div>
-      </div>
-      <div id="crypto-updated-small">--:--</div>
-    </div>
-  </div>
-
-  <!-- PHOTO -->
-  <div id="app-photo" class="app">
-    <img id="photo-img" src="" alt="">
-    <div id="photo-placeholder">Wachten op afbeelding...</div>
-  </div>
-
-</div>
-
-<div id="dots">
-  <div class="dot active" data-app="clock"></div>
-  <div class="dot" data-app="weather"></div>
-  <div class="dot" data-app="crypto"></div>
-  <div class="dot" data-app="photo"></div>
+<!-- PHOTO (on demand) -->
+<div id="app-photo" class="app">
+  <img id="photo-img" src="" alt="">
+  <div id="photo-return">aanraken om terug te gaan</div>
+  <div id="photo-timer"></div>
 </div>
 
 <script>
-// ── Config ───────────────────────────────────────────────────────────────────
-const APPS          = ['clock', 'weather', 'crypto', 'photo'];
-const AUTO_ROTATE_MS = 30000;
-const REFRESH_MS     = 5 * 60 * 1000;
-const WS_URL         = `ws://${location.host}/ws`;
-const WEATHER_LAT    = 51.37, WEATHER_LON = 6.17;
+const REFRESH_MS   = 5 * 60 * 1000;
+const PHOTO_RETURN = 30 * 60 * 1000; // 30 minuten
+const WS_URL       = `ws://${location.host}/ws`;
 
-// ── State ────────────────────────────────────────────────────────────────────
-let currentIdx   = 0;
-let rotateTimer  = null;
-let ws           = null;
-let photoActive  = false;
+let photoTimer = null;
+let photoCountdown = null;
+let ws = null;
 
-// ── Navigation ───────────────────────────────────────────────────────────────
-function showApp(name, direction = 'right') {
-  const idx = APPS.indexOf(name);
-  if (idx === -1) return;
-  const prev = APPS[currentIdx];
-  if (prev === name) return;
-
-  const prevEl = document.getElementById(`app-${prev}`);
-  const nextEl = document.getElementById(`app-${name}`);
-
-  prevEl.classList.remove('active');
-  nextEl.classList.add('active');
-
-  currentIdx  = idx;
-  photoActive = name === 'photo' && document.getElementById('photo-img').style.display !== 'none';
-  updateDots();
-  resetRotateTimer();
+// ── App switching ─────────────────────────────────────────────────────────────
+function showCrypto() {
+  clearTimeout(photoTimer);
+  clearInterval(photoCountdown);
+  document.getElementById('app-photo').classList.remove('active');
+  document.getElementById('app-crypto').classList.add('active');
 }
 
-let swipeLocked = false;
-function nextApp() {
-  if (swipeLocked) return; swipeLocked = true;
-  showApp(APPS[(currentIdx + 1) % APPS.length], 'right');
-  setTimeout(() => { swipeLocked = false; }, 250);
-}
-function prevApp() {
-  if (swipeLocked) return; swipeLocked = true;
-  showApp(APPS[(currentIdx - 1 + APPS.length) % APPS.length], 'left');
-  setTimeout(() => { swipeLocked = false; }, 250);
+function showPhoto(src) {
+  if (src) {
+    const img = document.getElementById('photo-img');
+    img.src = src;
+  }
+  document.getElementById('app-crypto').classList.remove('active');
+  document.getElementById('app-photo').classList.add('active');
+
+  // Countdown timer
+  let remaining = PHOTO_RETURN;
+  const timerEl = document.getElementById('photo-timer');
+  clearInterval(photoCountdown);
+  photoCountdown = setInterval(() => {
+    remaining -= 1000;
+    const min = Math.floor(remaining / 60000);
+    const sec = Math.floor((remaining % 60000) / 1000);
+    timerEl.textContent = `${min}:${String(sec).padStart(2,'0')}`;
+    if (remaining <= 0) { clearInterval(photoCountdown); showCrypto(); }
+  }, 1000);
+
+  clearTimeout(photoTimer);
+  photoTimer = setTimeout(showCrypto, PHOTO_RETURN);
 }
 
-function updateDots() {
-  document.querySelectorAll('.dot').forEach((d, i) =>
-    d.classList.toggle('active', i === currentIdx));
-}
-
-// ── Auto-rotate ───────────────────────────────────────────────────────────────
-function resetRotateTimer() {
-  clearTimeout(rotateTimer);
-  if (photoActive) return;
-  rotateTimer = setTimeout(nextApp, AUTO_ROTATE_MS);
-}
-
-// ── Touch / swipe ─────────────────────────────────────────────────────────────
-document.getElementById('touch-left').addEventListener('touchstart', e => { e.preventDefault(); prevApp(); }, {passive: false});
-document.getElementById('touch-right').addEventListener('touchstart', e => { e.preventDefault(); nextApp(); }, {passive: false});
-
-let touchStartX = 0;
-document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
-document.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 40) dx < 0 ? nextApp() : prevApp();
-});
+// Touch anywhere on photo → terug naar crypto
+document.getElementById('app-photo').addEventListener('touchstart', e => {
+  e.preventDefault();
+  showCrypto();
+}, { passive: false });
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 function connectWS() {
@@ -341,14 +178,10 @@ function connectWS() {
   ws.onmessage = e => {
     const msg = JSON.parse(e.data);
     if (msg.type === 'show_image') {
-      const img = document.getElementById('photo-img');
-      img.src = msg.data;
-      img.style.display = 'block';
-      document.getElementById('photo-placeholder').style.display = 'none';
-      photoActive = true;
-      showApp('photo', 'right');
+      showPhoto(msg.data);
     } else if (msg.type === 'switch_app') {
-      showApp(msg.app, 'right');
+      if (msg.app === 'photo') showPhoto(null);
+      else showCrypto();
     }
   };
   ws.onclose = () => {
@@ -358,93 +191,21 @@ function connectWS() {
   ws.onerror = () => ws.close();
 }
 
-// ── Clock ─────────────────────────────────────────────────────────────────────
-const DAYS   = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-const MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-
-function getWeekNumber(d) {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-}
-
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock-time').textContent =
-    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('clock-date').textContent =
-    `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
-  document.getElementById('clock-day').textContent = `week ${getWeekNumber(now)}`;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ── Weather ───────────────────────────────────────────────────────────────────
-const WMO_ICONS = {
-  0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',
-  51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',
-  71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌧️',82:'⛈️',
-  95:'⛈️',96:'⛈️',99:'⛈️',
-};
-const WMO_DESC = {
-  0:'Helder',1:'Overwegend helder',2:'Gedeeltelijk bewolkt',3:'Bewolkt',
-  45:'Mist',48:'Rijp mist',51:'Lichte motregen',53:'Motregen',55:'Dichte motregen',
-  61:'Lichte regen',63:'Regen',65:'Zware regen',71:'Lichte sneeuw',73:'Sneeuw',
-  75:'Zware sneeuw',80:'Lichte buien',81:'Buien',82:'Zware buien',
-  95:'Onweer',96:'Onweer met hagel',99:'Zwaar onweer',
-};
-
-async function fetchWeather() {
-  try {
-    const r = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER_LAT}&longitude=${WEATHER_LON}` +
-      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,visibility,weather_code` +
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min&wind_speed_unit=kmh` +
-      `&timezone=Europe%2FAmsterdam&forecast_days=4`);
-    const d = await r.json();
-    const c = d.current;
-    document.getElementById('weather-icon').textContent = WMO_ICONS[c.weather_code] || '🌡️';
-    document.getElementById('weather-temp').textContent = `${Math.round(c.temperature_2m)}°`;
-    document.getElementById('weather-desc').textContent = WMO_DESC[c.weather_code] || '';
-    document.getElementById('w-humidity').textContent = c.relative_humidity_2m;
-    document.getElementById('w-wind').textContent = Math.round(c.wind_speed_10m);
-    document.getElementById('w-vis').textContent = Math.round((c.visibility || 0) / 1000);
-
-    const dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
-    const fc = document.getElementById('weather-forecast');
-    fc.innerHTML = '';
-    for (let i = 1; i <= 3; i++) {
-      const date = new Date(d.daily.time[i]);
-      const div  = document.createElement('div');
-      div.className = 'forecast-day';
-      div.innerHTML = `
-        <div class="f-name">${dayNames[date.getDay()]}</div>
-        <div class="f-icon">${WMO_ICONS[d.daily.weather_code[i]] || '🌡️'}</div>
-        <div class="f-temps">
-          <span class="f-hi">${Math.round(d.daily.temperature_2m_max[i])}°</span>
-          <span class="f-lo">${Math.round(d.daily.temperature_2m_min[i])}°</span>
-        </div>`;
-      fc.appendChild(div);
-    }
-  } catch (err) {
-    document.getElementById('weather-desc').textContent = 'Ophalen mislukt';
-  }
-}
-
-// ── Crypto Candlestick ────────────────────────────────────────────────────────
+// ── Crypto ────────────────────────────────────────────────────────────────────
 let cryptoCoin     = 'BTC';
 let cryptoInterval = '4h';
 let cryptoBars     = 30;
 const BINANCE_SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT' };
 
 function fmtPrice(p) {
-  return p >= 1000
-    ? '$' + p.toLocaleString('nl-NL', {maximumFractionDigits: 0})
-    : '$' + p.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  if (p >= 1000) return '$' + p.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (p >= 1)    return '$' + p.toFixed(2);
+  return '$' + p.toFixed(4);
 }
 function fmtPriceShort(p) {
-  return p >= 1000 ? '$' + (p / 1000).toFixed(1) + 'k' : '$' + p.toFixed(0);
+  if (p >= 1000) return '$' + (p/1000).toFixed(1) + 'k';
+  if (p >= 1)    return '$' + p.toFixed(1);
+  return '$' + p.toFixed(3);
 }
 
 function selectCoin(coin) {
@@ -467,89 +228,80 @@ function selectBars(n) {
 }
 
 async function fetchCrypto() {
+  const sym = BINANCE_SYMBOLS[cryptoCoin];
   try {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${BINANCE_SYMBOLS[cryptoCoin]}&interval=${cryptoInterval}&limit=${cryptoBars}`;
-    const data = await (await fetch(url)).json();
-    const candles = data.map(k => ({
-      o: parseFloat(k[1]), h: parseFloat(k[2]),
-      l: parseFloat(k[3]), c: parseFloat(k[4])
-    }));
-    const last = candles[candles.length - 1];
-    const change = ((last.c - candles[0].o) / candles[0].o) * 100;
-    document.getElementById('crypto-current-price').textContent = fmtPrice(last.c);
-    const chEl = document.getElementById('crypto-current-change');
-    chEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
-    chEl.className   = change >= 0 ? 'pos' : 'neg';
+    const [kRes, tRes] = await Promise.all([
+      fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${cryptoInterval}&limit=${cryptoBars}`),
+      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${sym}`)
+    ]);
+    const candles = await kRes.json();
+    const ticker  = await tRes.json();
+
+    const price  = parseFloat(ticker.lastPrice);
+    const change = parseFloat(ticker.priceChangePercent);
+    const priceEl  = document.getElementById('crypto-current-price');
+    const changeEl = document.getElementById('crypto-current-change');
+    priceEl.textContent  = fmtPrice(price);
+    changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+    changeEl.className   = change >= 0 ? 'pos' : 'neg';
+
+    drawCandlesticks(candles);
+
     const now = new Date();
     document.getElementById('crypto-updated-small').textContent =
       `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    drawCandlesticks(candles);
-  } catch (err) {
-    document.getElementById('crypto-updated-small').textContent = 'Fout';
-  }
+  } catch(e) { console.error('fetchCrypto', e); }
 }
 
 function drawCandlesticks(candles) {
   const canvas = document.getElementById('crypto-canvas');
-  // Use window dimensions — always available, even when app is hidden
   const W = window.innerWidth;
-  const H = window.innerHeight - 38 - 34; // screen height minus header and controls
+  const H = window.innerHeight - 38 - 34;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
+
+  const PAD_L = 8, PAD_R = 50, PAD_T = 8, PAD_B = 18;
+  const prices = candles.flatMap(c => [parseFloat(c[2]), parseFloat(c[3])]);
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
+  const range = maxP - minP || 1;
+  const chartW = W - PAD_L - PAD_R, chartH = H - PAD_T - PAD_B;
+  const toY = p => PAD_T + chartH - ((p - minP) / range) * chartH;
+  const step   = chartW / candles.length;
+  const bodyW  = Math.max(1, Math.floor(step * 0.65));
+
   ctx.clearRect(0, 0, W, H);
-  if (!candles.length) return;
 
-  const PAD_L = 4, PAD_R = 44, PAD_T = 10, PAD_B = 16;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-  const minP   = Math.min(...candles.map(c => c.l));
-  const maxP   = Math.max(...candles.map(c => c.h));
-  const range  = maxP - minP || 1;
-  const toY    = p => PAD_T + chartH - ((p - minP) / range) * chartH;
-
-  const step  = chartW / candles.length;
-  const bodyW = Math.max(1, Math.floor(step * 0.65));
-
-  // Grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  ctx.lineWidth = 1;
-  ctx.font = '9px system-ui';
-  ctx.fillStyle = 'rgba(84,110,122,0.9)';
-  ctx.textAlign = 'left';
-  for (let i = 0; i <= 3; i++) {
-    const y = PAD_T + (chartH / 3) * i;
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R + 4, y); ctx.stroke();
-    ctx.fillText(fmtPriceShort(maxP - (range / 3) * i), W - PAD_R + 6, y + 3);
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD_T + (chartH / 4) * i;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    const price = maxP - (range / 4) * i;
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '9px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText(fmtPriceShort(price), W - PAD_R + 3, y + 3);
   }
 
-  // Candles
   candles.forEach((c, i) => {
-    const cx    = PAD_L + step * i + step / 2;
-    const isUp  = c.c >= c.o;
-    const color = isUp ? '#69f0ae' : '#ff5252';
-    const top   = toY(Math.max(c.o, c.c));
-    const bot   = toY(Math.min(c.o, c.c));
-    ctx.fillStyle = ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx, toY(c.h)); ctx.lineTo(cx, toY(c.l)); ctx.stroke();
-    ctx.fillRect(cx - bodyW / 2, top, bodyW, Math.max(1, bot - top));
+    const o = parseFloat(c[1]), h = parseFloat(c[2]);
+    const l = parseFloat(c[3]), cl = parseFloat(c[4]);
+    const x = PAD_L + i * step + step / 2;
+    const color = cl >= o ? '#69f0ae' : '#ff5252';
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, toY(h)); ctx.lineTo(x, toY(l)); ctx.stroke();
+    const bodyTop = toY(Math.max(o, cl)), bodyBot = toY(Math.min(o, cl));
+    const bh = Math.max(1, bodyBot - bodyTop);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - bodyW / 2, bodyTop, bodyW, bh);
   });
-
-  // Last price line
-  const ly = toY(candles[candles.length - 1].c);
-  ctx.setLineDash([3, 3]);
-  ctx.strokeStyle = 'rgba(79,195,247,0.5)';
-  ctx.beginPath(); ctx.moveTo(PAD_L, ly); ctx.lineTo(W - PAD_R + 4, ly); ctx.stroke();
-  ctx.setLineDash([]);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 connectWS();
-fetchWeather();
 fetchCrypto();
-setInterval(fetchWeather, REFRESH_MS);
-setInterval(fetchCrypto,  REFRESH_MS);
-resetRotateTimer();
+setInterval(fetchCrypto, REFRESH_MS);
 </script>
 </body>
 </html>
