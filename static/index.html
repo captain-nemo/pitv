@@ -247,8 +247,8 @@
         <div class="ctrl-btn" data-bars="80" onclick="selectBars(80)">80</div>
       </div>
       <div class="ctrl-group">
-        <div class="ctrl-btn active" data-interval="1h" onclick="selectInterval('1h')">1H</div>
-        <div class="ctrl-btn" data-interval="4h" onclick="selectInterval('4h')">4H</div>
+        <div class="ctrl-btn" data-interval="1h" onclick="selectInterval('1h')">1H</div>
+        <div class="ctrl-btn active" data-interval="4h" onclick="selectInterval('4h')">4H</div>
         <div class="ctrl-btn" data-interval="1d" onclick="selectInterval('1d')">1D</div>
       </div>
       <div id="crypto-updated-small">--:--</div>
@@ -445,7 +445,7 @@ async function fetchWeather() {
 
 // ── Crypto Candlestick ────────────────────────────────────────────────────────
 let cryptoCoin     = 'BTC';
-let cryptoInterval = '1h';
+let cryptoInterval = '4h';
 let cryptoBars     = 30;
 const BINANCE_SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT' };
 
