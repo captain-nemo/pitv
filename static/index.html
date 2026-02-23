@@ -166,13 +166,17 @@ function showPhoto(src) {
   photoTimer = setTimeout(showCrypto, PHOTO_RETURN);
 }
 
-// Touch anywhere → als photo actief is, terug naar crypto
-document.addEventListener('touchstart', e => {
+// Aanraken of klikken → als photo actief is, terug naar crypto
+window.addEventListener('pointerdown', () => {
   if (document.getElementById('app-photo').classList.contains('active')) {
-    e.preventDefault();
     showCrypto();
   }
-}, { passive: false });
+});
+window.addEventListener('touchstart', () => {
+  if (document.getElementById('app-photo').classList.contains('active')) {
+    showCrypto();
+  }
+}, { passive: true });
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 function connectWS() {
