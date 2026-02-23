@@ -47,7 +47,7 @@
     justify-content: center;
     opacity: 0;
     transform: translateX(100%);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: none;
     pointer-events: none;
   }
   .app.active { opacity: 1; transform: translateX(0); pointer-events: all; }
@@ -298,25 +298,9 @@ function showApp(name, direction = 'right') {
 
   prevEl.classList.remove('active');
   prevEl.classList.add(direction === 'right' ? 'exit-left' : 'exit-right');
-  setTimeout(() => prevEl.classList.remove('exit-left', 'exit-right'), 220);
+  prevEl.classList.remove('exit-left', 'exit-right');
 
-  // GPU-friendly animation: double-RAF instead of forced reflow
-  nextEl.style.transition = 'none';
-  nextEl.style.transform = direction === 'right' ? 'translateX(100%)' : 'translateX(-100%)';
-  nextEl.style.opacity = '0';
   nextEl.classList.add('active');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      nextEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-      nextEl.style.transform = 'translateX(0)';
-      nextEl.style.opacity = '1';
-      setTimeout(() => {
-        nextEl.style.transition = '';
-        nextEl.style.transform = '';
-        nextEl.style.opacity = '';
-      }, 220);
-    });
-  });
 
   currentIdx  = idx;
   photoActive = name === 'photo' && document.getElementById('photo-img').style.display !== 'none';
