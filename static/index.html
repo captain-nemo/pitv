@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=480, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PiTV</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,7 +18,7 @@
   }
 
   html, body {
-    width: 480px; height: 320px;
+    width: 100%; height: 100%;
     overflow: hidden;
     background: var(--bg);
     color: var(--text);
@@ -30,13 +30,13 @@
   /* ── Layout ── */
   #container {
     position: relative;
-    width: 480px; height: 320px;
+    width: 100%; height: 100%;
     overflow: hidden;
   }
 
   .app {
     position: absolute;
-    width: 480px; height: 320px;
+    width: 100%; height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -183,7 +183,7 @@
      PHOTO
   ════════════════ */
   #app-photo { background: #000; justify-content: center; }
-  #photo-img { max-width: 480px; max-height: 320px; object-fit: contain; display: none; }
+  #photo-img { max-width: 100%; max-height: 100%; object-fit: contain; display: none; }
   #photo-placeholder { color: var(--muted); font-size: 13px; letter-spacing: 2px; }
 </style>
 </head>
@@ -488,9 +488,9 @@ async function fetchCrypto() {
 
 function drawCandlesticks(candles) {
   const canvas = document.getElementById('crypto-canvas');
-  // Use fixed dimensions — clientWidth/Height returns 0 when app is hidden
-  const W = 480;
-  const H = 320 - 38 - 34; // screen height minus header and controls
+  // Use window dimensions — always available, even when app is hidden
+  const W = window.innerWidth;
+  const H = window.innerHeight - 38 - 34; // screen height minus header and controls
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
