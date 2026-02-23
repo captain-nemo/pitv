@@ -45,7 +45,8 @@
     justify-content: center;
     opacity: 0;
     transform: translateX(100%);
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    will-change: transform, opacity;
     pointer-events: none;
   }
   .app.active { opacity: 1; transform: translateX(0); pointer-events: all; }
@@ -296,22 +297,25 @@ function showApp(name, direction = 'right') {
 
   prevEl.classList.remove('active');
   prevEl.classList.add(direction === 'right' ? 'exit-left' : 'exit-right');
-  setTimeout(() => prevEl.classList.remove('exit-left', 'exit-right'), 400);
+  setTimeout(() => prevEl.classList.remove('exit-left', 'exit-right'), 220);
 
-  // Fix: use inline styles for animation so CSS class doesn't override transform
+  // GPU-friendly animation: double-RAF instead of forced reflow
   nextEl.style.transition = 'none';
   nextEl.style.transform = direction === 'right' ? 'translateX(100%)' : 'translateX(-100%)';
   nextEl.style.opacity = '0';
-  void nextEl.offsetWidth; // force reflow — browser registers start position
-  nextEl.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-  nextEl.style.transform = 'translateX(0)';
-  nextEl.style.opacity = '1';
   nextEl.classList.add('active');
-  setTimeout(() => {
-    nextEl.style.transition = '';
-    nextEl.style.transform = '';
-    nextEl.style.opacity = '';
-  }, 400);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      nextEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      nextEl.style.transform = 'translateX(0)';
+      nextEl.style.opacity = '1';
+      setTimeout(() => {
+        nextEl.style.transition = '';
+        nextEl.style.transform = '';
+        nextEl.style.opacity = '';
+      }, 220);
+    });
+  });
 
   currentIdx  = idx;
   photoActive = name === 'photo' && document.getElementById('photo-img').style.display !== 'none';
@@ -319,8 +323,17 @@ function showApp(name, direction = 'right') {
   resetRotateTimer();
 }
 
-function nextApp() { showApp(APPS[(currentIdx + 1) % APPS.length], 'right'); }
-function prevApp() { showApp(APPS[(currentIdx - 1 + APPS.length) % APPS.length], 'left'); }
+let swipeLocked = false;
+function nextApp() {
+  if (swipeLocked) return; swipeLocked = true;
+  showApp(APPS[(currentIdx + 1) % APPS.length], 'right');
+  setTimeout(() => { swipeLocked = false; }, 250);
+}
+function prevApp() {
+  if (swipeLocked) return; swipeLocked = true;
+  showApp(APPS[(currentIdx - 1 + APPS.length) % APPS.length], 'left');
+  setTimeout(() => { swipeLocked = false; }, 250);
+}
 
 function updateDots() {
   document.querySelectorAll('.dot').forEach((d, i) =>
@@ -335,8 +348,8 @@ function resetRotateTimer() {
 }
 
 // ── Touch / swipe ─────────────────────────────────────────────────────────────
-document.getElementById('touch-left').addEventListener('click', prevApp);
-document.getElementById('touch-right').addEventListener('click', nextApp);
+document.getElementById('touch-left').addEventListener('touchstart', e => { e.preventDefault(); prevApp(); }, {passive: false});
+document.getElementById('touch-right').addEventListener('touchstart', e => { e.preventDefault(); nextApp(); }, {passive: false});
 
 let touchStartX = 0;
 document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
