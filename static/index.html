@@ -41,18 +41,12 @@
   .app {
     position: absolute;
     width: 100%; height: 100%;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transform: translateX(100%);
-    transition: none;
-    pointer-events: none;
   }
-  .app.active { opacity: 1; transform: translateX(0); pointer-events: all; }
-  .app.exit-left  { opacity: 0; transform: translateX(-100%); }
-  .app.exit-right { opacity: 0; transform: translateX(100%); }
+  .app.active { display: flex; }
 
   /* ── Touch zones ── */
   .touch-zone {
@@ -297,9 +291,6 @@ function showApp(name, direction = 'right') {
   const nextEl = document.getElementById(`app-${name}`);
 
   prevEl.classList.remove('active');
-  prevEl.classList.add(direction === 'right' ? 'exit-left' : 'exit-right');
-  prevEl.classList.remove('exit-left', 'exit-right');
-
   nextEl.classList.add('active');
 
   currentIdx  = idx;
